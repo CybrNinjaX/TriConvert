@@ -1,6 +1,6 @@
 from io import BytesIO
 from pathlib import PurePath
-import json
+import re
 import zipfile
 
 import trimesh
@@ -26,7 +26,8 @@ def convert_model(data: bytes, source_format: str, target_format: str, original_
             "We couldn't read or convert this model. Check that the file is valid and try again."
         ) from error
 
-    base_name = PurePath(original_name).stem or "converted-model"
+    base_name = re.sub(r"[^A-Za-z0-9._-]+", "_", PurePath(original_name).stem).strip("._")
+    base_name = base_name or "converted-model"
     if target_format == "gltf":
         if isinstance(exported, str):
             exported = exported.encode("utf-8")
