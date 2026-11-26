@@ -5,7 +5,17 @@ from app.services.converter import ConversionError, convert_model
 
 router = APIRouter(tags=["conversion"])
 
-SUPPORTED_FORMATS = {"obj", "stl", "glb", "gltf"}
+SUPPORTED_FORMATS = {"obj", "stl", "glb", "gltf", "ply", "3mf", "fbx", "usdz"}
+CONVERSION_PAIRS = {
+    "glb": {"stl", "obj", "gltf"},
+    "gltf": {"glb"},
+    "obj": {"glb", "stl"},
+    "fbx": {"glb"},
+    "stl": {"obj"},
+    "ply": {"stl"},
+    "3mf": {"stl"},
+    "usdz": {"glb"},
+}
 MAX_FILE_SIZE = 100 * 1024 * 1024
 
 
@@ -15,11 +25,11 @@ async def convert(file: UploadFile = File(...), target_format: str = Form(...)):
     target_format = target_format.lower().lstrip(".")
 
     if source_format not in SUPPORTED_FORMATS:
-        raise HTTPException(400, "Unsupported input format. Use OBJ, STL, GLB, or GLTF.")
+        raise HTTPException(400, "Unsupported input format. Use OBJ, STL, GLB, GLTF, PLY, 3MF, FBX, or USDZ.")
     if target_format not in SUPPORTED_FORMATS:
         raise HTTPException(400, "Unsupported output format. Use OBJ, STL, GLB, or GLTF.")
-    if source_format == target_format:
-        raise HTTPException(400, "Choose a different output format from the input format.")
+    if target_format not in CONVERSION_PAIRS.get(source_format, set()):
+        raise HTTPException(400, f"{source_format.upper()} to {target_format.upper()} is not a supported conversion.")
 
     data = await file.read(MAX_FILE_SIZE + 1)
     if not data:

@@ -6,8 +6,18 @@ import {
 import { convertModel } from './services/converter.js'
 import './App.css'
 
-const formats = ['OBJ', 'STL', 'GLB', 'GLTF']
-const acceptedFiles = '.obj,.stl,.glb,.gltf'
+const formats = ['OBJ', 'STL', 'GLB', 'GLTF', 'PLY', '3MF', 'FBX', 'USDZ']
+const conversions = {
+  GLB: [{ format: 'STL', purpose: '3D printing' }, { format: 'OBJ', purpose: '3D modelling' }, { format: 'GLTF', purpose: 'Web 3D' }],
+  GLTF: [{ format: 'GLB', purpose: 'Single-file export' }],
+  OBJ: [{ format: 'GLB', purpose: 'Web visualization' }, { format: 'STL', purpose: '3D printing' }],
+  FBX: [{ format: 'GLB', purpose: 'Web 3D' }],
+  STL: [{ format: 'OBJ', purpose: 'Mesh editing' }],
+  PLY: [{ format: 'STL', purpose: '3D printing' }],
+  '3MF': [{ format: 'STL', purpose: '3D printing' }],
+  USDZ: [{ format: 'GLB', purpose: 'Web 3D' }],
+}
+const acceptedFiles = '.obj,.stl,.glb,.gltf,.ply,.3mf,.fbx,.usdz'
 
 function formatSize(bytes) {
   if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`
@@ -27,7 +37,7 @@ function App() {
     if (!nextFile) return
     const extension = nextFile.name.split('.').pop()?.toLowerCase()
     if (!formats.map((format) => format.toLowerCase()).includes(extension)) {
-      setError('Choose an OBJ, STL, GLB, or GLTF file.')
+      setError('Choose an OBJ, STL, GLB, GLTF, PLY, 3MF, FBX, or USDZ file.')
       return
     }
     if (nextFile.size > 100 * 1024 * 1024) {
@@ -38,9 +48,7 @@ function App() {
     setError('')
     setResult(null)
     setStatus('idle')
-    if (extension.toUpperCase() === targetFormat) {
-      setTargetFormat(formats.find((format) => format !== extension.toUpperCase()))
-    }
+    setTargetFormat(conversions[extension.toUpperCase()][0].format)
   }
 
   const runConversion = async () => {
@@ -76,6 +84,8 @@ function App() {
   }
 
   const sourceFormat = file?.name.split('.').pop()?.toUpperCase()
+  const availableConversions = sourceFormat ? conversions[sourceFormat] : null
+  const selectedConversion = availableConversions?.find(({ format }) => format === targetFormat)
 
   return (
     <div className="app-shell">
@@ -137,10 +147,11 @@ function App() {
 
           <div className="conversion-row">
             <div className="format-field">
-              <label>CONVERT TO</label>
+              <label>OUTPUT FORMAT</label>
               <div className="format-select-wrap"><FileBox size={17} /><select value={targetFormat} onChange={(event) => setTargetFormat(event.target.value)}>
-                {formats.filter((format) => format !== sourceFormat).map((format) => <option key={format} value={format}>{format} format</option>)}
+                {(availableConversions || formats.map((format) => ({ format, purpose: '' }))).map(({ format, purpose }) => <option key={format} value={format}>{format}{purpose ? ` · ${purpose}` : ' format'}</option>)}
               </select><ChevronDown size={16} /></div>
+              {selectedConversion && <span className="purpose-note">For {selectedConversion.purpose.toLowerCase()}</span>}
             </div>
             <div className="arrow-divider"><ArrowLeftRight size={18} /></div>
             <div className="privacy-note"><ShieldCheck size={18} /><span><strong>Private by design</strong><small>Files are processed and discarded.</small></span></div>
@@ -153,6 +164,7 @@ function App() {
           {status === 'done' && result && <div className="feedback success-feedback" role="status"><Check size={17} /><span><strong>Your {targetFormat} is ready.</strong> {result.filename}</span><button type="button" onClick={downloadResult}><ArrowDownToLine size={16} /> Download</button></div>}
         </section>
 
+        <p className="engine-note">FBX and USDZ conversions need Blender installed on the server.</p>
         <div className="trust-row"><span><ShieldCheck size={15} /> No account needed</span><b /> <span>Free to use</span><b /> <span>Up to 100 MB per file</span></div>
 
         <section className="how-section">
