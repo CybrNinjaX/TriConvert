@@ -1,9 +1,17 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   ArrowDownToLine, ArrowLeftRight, Box, Check, ChevronDown, FileBox,
-  FileUp, Layers3, LoaderCircle, ShieldCheck, Sparkles, X,
+  FileUp, Layers3, LoaderCircle, LogIn, LogOut, ShieldCheck, Sparkles, X,
 } from 'lucide-react'
 import { convertModel } from './services/converter.js'
+import { auth } from './services/firebase.js'
+import {
+  createUserWithEmailAndPassword,
+  onAuthStateChanged,
+  sendPasswordResetEmail,
+  signInWithEmailAndPassword,
+  signOut,
+} from 'firebase/auth'
 import './App.css'
 
 const formats = ['OBJ', 'STL', 'GLB', 'GLTF', 'PLY', '3MF', 'FBX', 'USDZ']
@@ -33,6 +41,56 @@ function App() {
   const [error, setError] = useState('')
   const [result, setResult] = useState(null)
   const [dragging, setDragging] = useState(false)
+  const [authUser, setAuthUser] = useState(null)
+  const [authOpen, setAuthOpen] = useState(false)
+  const [authMode, setAuthMode] = useState('login')
+  const [authBusy, setAuthBusy] = useState(false)
+  const [authError, setAuthError] = useState('')
+  const [authNotice, setAuthNotice] = useState('')
+
+  useEffect(() => onAuthStateChanged(auth, setAuthUser), [])
+
+  const openAuth = (mode = 'login') => {
+    setAuthMode(mode)
+    setAuthError('')
+    setAuthNotice('')
+    setAuthOpen(true)
+  }
+
+  const submitAuth = async (event) => {
+    event.preventDefault()
+    const formData = new FormData(event.currentTarget)
+    const email = formData.get('email')?.toString().trim()
+    const password = formData.get('password')?.toString()
+    setAuthBusy(true)
+    setAuthError('')
+    setAuthNotice('')
+    try {
+      if (authMode === 'reset') {
+        await sendPasswordResetEmail(auth, email)
+        setAuthNotice('Password reset email sent. Check your inbox.')
+      } else if (authMode === 'signup') {
+        await createUserWithEmailAndPassword(auth, email, password)
+        setAuthOpen(false)
+      } else {
+        await signInWithEmailAndPassword(auth, email, password)
+        setAuthOpen(false)
+      }
+    } catch (error) {
+      const messages = {
+        'auth/invalid-credential': 'Email or password is incorrect.',
+        'auth/email-already-in-use': 'An account with this email already exists.',
+        'auth/weak-password': 'Use a password with at least 6 characters.',
+        'auth/invalid-email': 'Enter a valid email address.',
+        'auth/too-many-requests': 'Too many attempts. Please try again later.',
+        'auth/network-request-failed': 'Could not reach Firebase. Check your connection and try again.',
+        'auth/operation-not-allowed': 'Email and password sign-in is not enabled in Firebase yet.',
+      }
+      setAuthError(messages[error.code] || 'Authentication failed. Please try again.')
+    } finally {
+      setAuthBusy(false)
+    }
+  }
 
   const selectFile = (nextFile) => {
     if (!nextFile) return
@@ -97,9 +155,39 @@ function App() {
         </a>
         <div className="topbar-right">
           <span className="format-note"><span className="live-dot" /> 3D CONVERTER · 26 ROUTES</span>
+          <button className="auth-button" type="button" onClick={() => authUser ? signOut(auth) : openAuth()}>
+            {authUser ? <><LogOut size={15} /> Sign out</> : <><LogIn size={15} /> Login</>}
+          </button>
           <a className="github-link" href="#converter">Start converting <Sparkles size={14} /></a>
         </div>
       </header>
+
+      {authOpen && <div className="auth-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setAuthOpen(false) }}>
+        <section className="auth-dialog" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+          <button className="auth-close" type="button" aria-label="Close sign-in" onClick={() => setAuthOpen(false)}><X size={18} /></button>
+          <span className="auth-mark"><Layers3 size={21} /></span>
+          <h2 id="auth-title">{authMode === 'signup' ? 'Create your account' : authMode === 'reset' ? 'Reset your password' : 'Welcome back'}</h2>
+          <p>{authMode === 'signup' ? 'Sign up to get started with TriConvert.' : authMode === 'reset' ? 'We’ll email you a link to reset your password.' : 'Sign in to your TriConvert account.'}</p>
+          <form className="auth-form" onSubmit={submitAuth}>
+            <label htmlFor="auth-email">Email address</label>
+            <input id="auth-email" name="email" type="email" autoComplete="email" placeholder="you@example.com" required />
+            {authMode !== 'reset' && <>
+              <label htmlFor="auth-password">Password</label>
+              <input id="auth-password" name="password" type="password" autoComplete={authMode === 'signup' ? 'new-password' : 'current-password'} minLength="6" placeholder="At least 6 characters" required />
+            </>}
+            {authError && <div className="auth-message auth-error" role="alert">{authError}</div>}
+            {authNotice && <div className="auth-message auth-success" role="status">{authNotice}</div>}
+            <button className="auth-submit" type="submit" disabled={authBusy}>
+              {authBusy ? <><LoaderCircle className="spin" size={16} /> Please wait</> : authMode === 'signup' ? 'Create account' : authMode === 'reset' ? 'Send reset email' : 'Sign in'}
+            </button>
+          </form>
+          <div className="auth-options">
+            {authMode === 'login' && <button type="button" onClick={() => openAuth('reset')}>Forgot password?</button>}
+            {authMode === 'signup' ? <button type="button" onClick={() => openAuth('login')}>Already have an account? Sign in</button> : authMode === 'login' && <button type="button" onClick={() => openAuth('signup')}>New to TriConvert? Create an account</button>}
+            {authMode === 'reset' && <button type="button" onClick={() => openAuth('login')}>Back to sign in</button>}
+          </div>
+        </section>
+      </div>}
 
       <main id="top">
         <section className="hero">
