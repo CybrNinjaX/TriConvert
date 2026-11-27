@@ -99,5 +99,7 @@ def convert_model(data: bytes, source_format: str, target_format: str, original_
         "obj": "text/plain",
         "stl": "model/stl",
         "glb": "model/gltf-binary",
+        "ply": "application/octet-stream",
+        "3mf": "application/vnd.ms-package.3dmanufacturing-3dmodel+xml",
     }
     return exported, f"{base_name}.{target_format}", media_types[target_format]
