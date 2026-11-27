@@ -7,14 +7,15 @@ import { convertModel } from './services/converter.js'
 import './App.css'
 
 const formats = ['OBJ', 'STL', 'GLB', 'GLTF', 'PLY', '3MF', 'FBX', 'USDZ']
+const outputFormats = ['OBJ', 'STL', 'GLB', 'GLTF', 'PLY', '3MF']
 const conversions = {
-  GLB: [{ format: 'STL', purpose: '3D printing' }, { format: 'OBJ', purpose: '3D modelling' }, { format: 'GLTF', purpose: 'Web 3D' }],
-  GLTF: [{ format: 'GLB', purpose: 'Single-file export' }],
-  OBJ: [{ format: 'GLB', purpose: 'Web visualization' }, { format: 'STL', purpose: '3D printing' }],
+  GLB: [{ format: 'STL', purpose: '3D printing' }, { format: 'OBJ', purpose: '3D modelling' }, { format: 'PLY', purpose: 'Point cloud and mesh tools' }, { format: '3MF', purpose: '3D printing' }],
+  GLTF: [{ format: 'GLB', purpose: 'Single-file export' }, { format: 'OBJ', purpose: '3D modelling' }, { format: 'STL', purpose: '3D printing' }, { format: 'PLY', purpose: 'Point cloud and mesh tools' }],
+  OBJ: [{ format: 'GLB', purpose: 'Web visualization' }, { format: 'STL', purpose: '3D printing' }, { format: 'GLTF', purpose: 'Web 3D' }, { format: 'PLY', purpose: 'Point cloud and mesh tools' }],
   FBX: [{ format: 'GLB', purpose: 'Web 3D' }],
-  STL: [{ format: 'OBJ', purpose: 'Mesh editing' }],
-  PLY: [{ format: 'STL', purpose: '3D printing' }],
-  '3MF': [{ format: 'STL', purpose: '3D printing' }],
+  STL: [{ format: 'OBJ', purpose: 'Mesh editing' }, { format: 'GLB', purpose: 'Web visualization' }, { format: 'GLTF', purpose: 'Web 3D' }, { format: 'PLY', purpose: 'Point cloud and mesh tools' }],
+  PLY: [{ format: 'STL', purpose: '3D printing' }, { format: 'OBJ', purpose: 'Mesh editing' }, { format: 'GLB', purpose: 'Web visualization' }, { format: 'GLTF', purpose: 'Web 3D' }],
+  '3MF': [{ format: 'STL', purpose: '3D printing' }, { format: 'OBJ', purpose: 'Mesh editing' }, { format: 'GLB', purpose: 'Web visualization' }, { format: 'GLTF', purpose: 'Web 3D' }],
   USDZ: [{ format: 'GLB', purpose: 'Web 3D' }],
 }
 const acceptedFiles = '.obj,.stl,.glb,.gltf,.ply,.3mf,.fbx,.usdz'
@@ -95,7 +96,7 @@ function App() {
           <span>tri<span>convert</span></span>
         </a>
         <div className="topbar-right">
-          <span className="format-note"><span className="live-dot" /> 3D FILE CONVERTER</span>
+          <span className="format-note"><span className="live-dot" /> 3D CONVERTER · 26 ROUTES</span>
           <a className="github-link" href="#converter">Start converting <Sparkles size={14} /></a>
         </div>
       </header>
@@ -124,7 +125,7 @@ function App() {
         <section id="converter" className="converter-card" aria-label="Convert a 3D model">
           <div className="card-heading">
             <div className="card-icon"><ArrowLeftRight size={19} /></div>
-            <div><h2>Let’s convert</h2><p>Drop in a model and choose where it’s going.</p></div>
+            <div><h2>Let’s convert</h2><p>26 supported conversions across 8 model formats.</p></div>
             <span className="step-label">01 <i /> 02 <i /> 03</span>
           </div>
 
@@ -142,14 +143,14 @@ function App() {
               <strong>{file ? file.name : 'Drop your 3D file here'}</strong>
               <small>{file ? `${formatSize(file.size)} · ${sourceFormat} model` : <>or <u>browse files</u> from your device</>}</small>
             </span>
-            {file ? <span className="file-check"><Check size={17} /></span> : <span className="file-types">OBJ&nbsp; · &nbsp;STL&nbsp; · &nbsp;GLB&nbsp; · &nbsp;GLTF</span>}
+            {file ? <span className="file-check"><Check size={17} /></span> : <span className="file-types">OBJ · STL · GLB · GLTF · PLY · 3MF · FBX · USDZ</span>}
           </button>
 
           <div className="conversion-row">
             <div className="format-field">
               <label>OUTPUT FORMAT</label>
               <div className="format-select-wrap"><FileBox size={17} /><select value={targetFormat} onChange={(event) => setTargetFormat(event.target.value)}>
-                {(availableConversions || formats.map((format) => ({ format, purpose: '' }))).map(({ format, purpose }) => <option key={format} value={format}>{format}{purpose ? ` · ${purpose}` : ' format'}</option>)}
+                {(availableConversions || outputFormats.map((format) => ({ format, purpose: '' }))).map(({ format, purpose }) => <option key={format} value={format}>{format}{purpose ? ` · ${purpose}` : ' format'}</option>)}
               </select><ChevronDown size={16} /></div>
               {selectedConversion && <span className="purpose-note">For {selectedConversion.purpose.toLowerCase()}</span>}
             </div>
