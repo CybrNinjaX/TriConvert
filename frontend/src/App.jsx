@@ -96,7 +96,7 @@ function App() {
         </a>
         <div className="topbar-right">
           <span className="format-note"><span className="live-dot" /> 3D FILE CONVERTER</span>
-          <a className="github-link" href="https://github.com" target="_blank" rel="noreferrer">Made for makers <Sparkles size={14} /></a>
+          <a className="github-link" href="#converter">Start converting <Sparkles size={14} /></a>
         </div>
       </header>
 
@@ -121,7 +121,7 @@ function App() {
           </div>
         </section>
 
-        <section className="converter-card" aria-label="Convert a 3D model">
+        <section id="converter" className="converter-card" aria-label="Convert a 3D model">
           <div className="card-heading">
             <div className="card-icon"><ArrowLeftRight size={19} /></div>
             <div><h2>Let’s convert</h2><p>Drop in a model and choose where it’s going.</p></div>
